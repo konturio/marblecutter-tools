@@ -150,7 +150,7 @@ elif [[ $input =~ "tar://" ]]; then
 fi
 
 if ( [[ "$count" -eq 3 ]] || ([[ "$count" -eq 4 ]] && grep -q alpha <<< $colorinterp ) ) && [[ "$dtype" == "uint8" ]]; then
-  opts="-co COMPRESS=JPEG -co PHOTOMETRIC=YCbCr"
+  opts="-co COMPRESS=LZW -co PHOTOMETRIC=YCbCr"
   overview_opts="--config COMPRESS_OVERVIEW JPEG --config PHOTOMETRIC_OVERVIEW YCbCr"
 elif [[ "$dtype" =~ "float" ]]; then
   opts="-co COMPRESS=DEFLATE -co PREDICTOR=3 -co ZLEVEL=9"

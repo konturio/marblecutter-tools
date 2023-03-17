@@ -26,17 +26,25 @@ WORKDIR /opt/marblecutter-tools
 
 COPY requirements.txt /opt/marblecutter-tools/requirements.txt
 
-RUN pip install cython
-
-RUN pip install -r requirements.txt && \
-  rm -rf /root/.cache
-
-COPY bin/* /opt/marblecutter-tools/bin/
-
-RUN ln -s /opt/marblecutter-tools/bin/* /usr/local/bin/ && \
-  mkdir -p /efs
-
 ENV CPL_VSIL_CURL_ALLOWED_EXTENSIONS .vrt,.tif,.tiff,.ovr,.msk,.jp2,.img,.hgt
 ENV GDAL_DISABLE_READDIR_ON_OPEN TRUE
 ENV VSI_CACHE TRUE
 ENV VSI_CACHE_SIZE 536870912
+
+ENV LC_ALL C.UTF-8
+ENV LANG C.UTF-8
+
+RUN apt-get update
+RUN apt-get install -y build-essential checkinstall
+RUN apt-get install -y libreadline-gplv2-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
+RUN apt-get install -y wget
+RUN wget https://www.python.org/ftp/python/3.6.3/Python-3.6.3.tgz
+RUN tar -xvf Python-3.6.3.tgz
+RUN cd Python-3.6.3 && ./configure && make && make install
+
+RUN pip3 install --upgrade setuptools
+RUN pip3 install rasterio haversine cython awscli
+
+COPY bin/* /opt/marblecutter-tools/bin/
+
+RUN ln -s /opt/marblecutter-tools/bin/* /usr/local/bin/ && mkdir -p /efs

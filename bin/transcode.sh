@@ -121,7 +121,7 @@ trap cleanup_transcode_on_failure ERR
 
 >&2 echo "Transcoding ${input}..."
 
-info=$(rio info $input 2> /dev/null)
+info=$(rio info $input)
 count=$(jq .count <<< $info)
 dtype=$(jq -r .dtype <<< $info)
 height=$(jq .height <<< $info)

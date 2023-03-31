@@ -32,7 +32,7 @@ THUMBNAIL_SIZE=${THUMBNAIL_SIZE:-300}
 # support for S3-compatible services (for GDAL + transcode.sh)
 # TODO support AWS_HTTPS to match GDAL
 export AWS_S3_ENDPOINT_SCHEME=${AWS_S3_ENDPOINT_SCHEME:-https://}
-export AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT:-s3.amazonaws.com}
+export AWS_S3_ENDPOINT=$AWS_REGION".s3.amazonaws.com"
 
 if [[ ! -z "$DEBUG" ]]; then
   set -x

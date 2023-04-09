@@ -27,7 +27,7 @@ def main():
         for a in args.meta:
             k, v = a.split('=', 1)
             if v:
-                geojson['properties'][k] = json.loads(v)
+                geojson['properties'][k] = json.loads(v, strict=False)
 
     assert incoming['type'] == 'FeatureCollection', \
         "Expecting a FeatureCollection GeoJSON object"

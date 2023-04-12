@@ -85,7 +85,7 @@ if [[ "$ext" == "zip" ]]; then
   inner_source=$(unzip -ql ${input} | grep "tif$\|dem$" | head -1 | awk '{print $4}')
 
   if [[ -z "$inner_source" ]]; then
-    >&2 echo "Could not find a TIFF inside ${input}"
+    echo "Could not find a TIFF inside ${input}"
     exit 1
   fi
 
@@ -94,7 +94,7 @@ elif [[ "$input" =~ \.tar\.gz$ ]]; then
   inner_source=$(tar ztf ${input} | grep "tif$" | head -1)
 
   if [[ -z "$inner_source" ]]; then
-    >&2 echo "Could not find a TIFF inside ${input}"
+    echo "Could not find a TIFF inside ${input}"
     exit 1
   fi
 
@@ -103,7 +103,7 @@ elif [[ "$input" =~ \.tar$ ]]; then
   inner_source=$(tar tf ${input} | grep "tif$" | head -1)
 
   if [[ -z "$inner_source" ]]; then
-    >&2 echo "Could not find a TIFF inside ${input}"
+    echo "Could not find a TIFF inside ${input}"
     exit 1
   fi
 
@@ -119,7 +119,7 @@ fi
 trap cleanup_transcode_on_failure INT
 trap cleanup_transcode_on_failure ERR
 
->&2 echo "Transcoding ${input}..."
+echo "Transcoding ${input}..."
 
 info=$(rio info $input)
 count=$(jq .count <<< $info)
@@ -161,7 +161,7 @@ else
 fi
 
 if [[ "$count" -eq 1 ]] && [[ "$(jq -r ".[0]" <<< $colorinterp)" == "palette" ]]; then
-  >&2 echo "Paletted source detected; using mode resampling by default"
+  echo "Paletted source detected; using mode resampling by default"
   resample="${resample:-mode}"
 else
   resample="${resample:-lanczos}"
@@ -169,7 +169,7 @@ fi
 
 for b in $(seq 1 $count); do
   if [ "$dtype" == "uint8" ] && [ "$(jq -r ".[$[b - 1]]" <<< $colorinterp)" == "alpha" ]; then
-    >&2 echo "Skipping band $b; it's an alpha band being treated as a mask"
+    echo "Skipping band $b; it's an alpha band being treated as a mask"
     mask="-mask $b"
   else
     bands="$bands -b $b"
@@ -179,7 +179,7 @@ done
 if [ -z "$mask" ] && grep -q nodata <<< $mask_flags; then
   # no alpha channel mask was found; creating one from NODATA values
   # without this, NODATA values are preserved but are subject to compression artifacts
-  >&2 echo "Creating an artificial alpha channel for NODATA masks"
+  echo "Creating an artificial alpha channel for NODATA masks"
 
   vrt="${input}.vrt"
   gdalwarp -q -srcnodata $nodata -dstalpha -of VRT $input $vrt
@@ -189,7 +189,7 @@ if [ -z "$mask" ] && grep -q nodata <<< $mask_flags; then
   to_clean+=($input)
 fi
 
->&2 echo "Transcoding ${count} band(s)..."
+echo "Transcoding ${count} band(s)..."
 update_status status "Transcoding ${count} band(s)..."
 # TODO make timeout configurable
 timeout --foreground 2h gdal_translate \
@@ -213,7 +213,7 @@ for z in $(seq 1 $zoom); do
   fi
 done
 
->&2 echo "Adding overviews..."
+echo "Adding overviews..."
 update_status status "Adding overviews..."
 timeout --foreground 8h gdaladdo \
   -q \
@@ -228,7 +228,7 @@ timeout --foreground 8h gdaladdo \
   $overviews
 
 if [ -f $intermediate.msk ]; then
-  >&2 echo "Adding overviews to mask..."
+  echo "Adding overviews to mask..."
   update_status status "Adding overviews to mask..."
   timeout --foreground 4h gdaladdo \
     -q \
@@ -243,7 +243,7 @@ if [ -f $intermediate.msk ]; then
     $overviews
 fi
 
->&2 echo "Creating cloud-optimized GeoTIFF..."
+echo "Creating cloud-optimized GeoTIFF..."
 update_status status "Creating cloud-optimized GeoTIFF..."
 timeout --foreground 2h gdal_translate \
   -q \

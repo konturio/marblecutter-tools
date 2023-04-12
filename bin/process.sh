@@ -74,19 +74,10 @@ function cleanup() {
 function update_status() {
   set +u
 
-  if [[ ! -z "$callback_url" ]]; then
-    local status=$1
-    local message=$2
+  local status=$1
+  local message=$2
 
-    set +e
-    cat <<EOF | curl -s -X POST -d @- -H "Content-Type: application/json" "${callback_url}"
-{
-  "status": "${status}",
-  "message": "${message}"
-}
-EOF
-    set -e
-  fi
+  >&2 echo "#*{ \"status\": \"${status}\", \"message\": \"${message}\" }*#"
 
   set -u
 }

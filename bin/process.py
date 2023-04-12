@@ -25,6 +25,7 @@ process_instance = subprocess.Popen(process_command, stdout=subprocess.PIPE, std
 # Initialize variables for parsing the subprocess's standard error output
 status_message_buffer = ''
 inside_status_tag = False
+error_message = ''
 
 # Parse the standard error output line by line
 for stderr_chunk in process_instance.stderr:
@@ -42,6 +43,8 @@ for stderr_chunk in process_instance.stderr:
             if text:
                 print('Found status message:', text, flush=True)
                 status_update_body = json.loads(text)
+                if status_update_body["status"] == "failed":
+                    status_update_body["message"] = error_message
                 send_callback_request(status_update_body)
             status_message_buffer = ''
             i += 2
@@ -51,4 +54,5 @@ for stderr_chunk in process_instance.stderr:
             i += 1
         # If not inside a status message tag, append the current character to the error message buffer
         else:
+            error_message += stderr_chunk[i]
             i += 1

@@ -34,7 +34,7 @@ ENV LC_ALL C.UTF-8
 ENV LANG C.UTF-8
 
 RUN pip3 install --upgrade setuptools
-RUN pip3 install rasterio haversine cython awscli
+RUN pip3 install rasterio haversine cython awscli requests
 
 COPY bin/* /opt/marblecutter-tools/bin/
 

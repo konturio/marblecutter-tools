@@ -74,26 +74,17 @@ function cleanup() {
 function update_status() {
   set +u
 
-  if [[ ! -z "$callback_url" ]]; then
-    local status=$1
-    local message=$2
+  local status=$1
+  local message=$2
 
-    set +e
-    cat <<EOF | curl -s -X POST -d @- -H "Content-Type: application/json" "${callback_url}"
-{
-  "status": "${status}",
-  "message": "${message}"
-}
-EOF
-    set -e
-  fi
+  >&2 echo "#*{ \"status\": \"${status}\", \"message\": \"${message}\" }*#"
 
   set -u
 }
 
 function mark_failed() {
   if [[ ! -z "$callback_url" ]]; then
-    >&2 echo "Failed. Telling ${callback_url}"
+    echo "Failed. Telling ${callback_url}"
     update_status failed
   fi
 }
@@ -176,15 +167,15 @@ function download() {
   local source=$2
 
   if [[ "$input" =~ ^s3:// ]]; then
-    >&2 echo "Downloading $input from S3..."
+    echo "Downloading $input from S3..."
     update_status status "Downloading $input from S3..."
     aws s3 cp --endpoint-url ${AWS_S3_ENDPOINT_SCHEME}${AWS_S3_ENDPOINT} "$input" "$source"
   elif [[ "$input" =~ s3\.amazonaws\.com ]]; then
-    >&2 echo "Downloading $input from S3 over HTTP..."
+    echo "Downloading $input from S3 over HTTP..."
     update_status status "Downloading $input from S3 over HTTP..."
     curl -sfL "$input" -o "$source"
   elif [[ "$input" =~ ^https?:// && ! "$input" =~ s3\.amazonaws\.com ]]; then
-    >&2 echo "Downloading $input..."
+    echo "Downloading $input..."
     update_status status "Downloading $input..."
     curl -sfL "$input" -o "$source"
   else
@@ -215,7 +206,7 @@ intermediate=${base}-intermediate.tif
 to_clean+=($intermediate ${source}.aux.xml)
 gdal_output=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $output)
 
->&2 echo "Processing ${input} into ${output}.{json,png,tif}..."
+echo "Processing ${input} into ${output}.{json,png,tif}..."
 update_status processing
 
 # 0. download source
@@ -225,7 +216,7 @@ download "$input" "$source"
 if [[ "$input" =~ \.img ]]; then
   set +e
 
-  >&2 echo "Attempting to download .ige companion..."
+  echo "Attempting to download .ige companion..."
   download "${input/%.img/.ige}" "${source/%.img/.ige}"
 
   set -e
@@ -240,7 +231,7 @@ if [[ "$input" =~ ^(s3|https?):// ]]; then
 fi
 
 # 6. create thumbnail
->&2 echo "Generating thumbnail..."
+echo "Generating thumbnail..."
 update_status status "Generating thumbnail..."
 thumb=${base}.png
 to_clean+=($thumb ${thumb}.aux.xml ${thumb}.msk)
@@ -279,7 +270,7 @@ gdal_translate \
   -outsize $target_width $target_height
 
 # 5. create footprint
->&2 echo "Generating footprint..."
+echo "Generating footprint..."
 update_status status "Generating footprint..."
 info=$(rio info $intermediate)
 nodata=$(jq -r .nodata <<< $info)
@@ -330,7 +321,7 @@ meta=$(< $footprint)
 if [[ "$output" =~ ^s3:// ]]; then
   update_aws_credentials
 
-  >&2 echo "Uploading..."
+  echo "Uploading..."
   update_status status "Uploading..."
   aws s3 cp $intermediate "${output}.tif"
   aws s3 cp $footprint "${output}.json"
@@ -349,4 +340,4 @@ fi
 
 rm -f ${intermediate}*
 
->&2 echo "Done."
+echo "Done."

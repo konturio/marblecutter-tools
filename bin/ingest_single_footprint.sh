@@ -7,7 +7,7 @@ fi
 
 set -e
 
->&2 echo "Ingesting footprint for ${footprint_uri}"
+echo "Ingesting footprint for ${footprint_uri}"
 
 # We're going to say the source is the root of the S3 key after the bucket name
 source=$(awk -F '/' '{print $4}' <<< $footprint_uri)

@@ -173,11 +173,23 @@ function download() {
   elif [[ "$input" =~ s3\.amazonaws\.com ]]; then
     echo "Downloading $input from S3 over HTTP..."
     update_status status "Downloading $input from S3 over HTTP..."
-    curl -sfL "$input" -o "$source"
+    curl -sfSL "$input" -o "$source" || { 
+      retval=$?
+      if [ $retval -eq 22 ]; then
+        cleanup_on_failure $LINENO
+        exit 1
+      fi
+    }
   elif [[ "$input" =~ ^https?:// && ! "$input" =~ s3\.amazonaws\.com ]]; then
     echo "Downloading $input..."
     update_status status "Downloading $input..."
-    curl -sfL "$input" -o "$source"
+    curl -sfSL "$input" -o "$source" || { 
+      retval=$?
+      if [ $retval -eq 22 ]; then
+        cleanup_on_failure $LINENO
+        exit 1
+      fi
+    }
   else
     cp "$input" "$source"
   fi

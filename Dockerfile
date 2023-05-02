@@ -13,8 +13,10 @@ RUN apt-get update \
     git \
     jq \
     nfs-common \
+    build-essential \
     parallel \
     python3 \
+    python3-dev \
     python3-pip \
     python3-setuptools \
     unzip \

@@ -40,4 +40,7 @@ RUN pip3 install rasterio haversine cython awscli requests
 
 COPY bin/* /opt/marblecutter-tools/bin/
 
+RUN chmod +x /opt/marblecutter-tools/bin/process.sh
+RUN chmod +x /opt/marblecutter-tools/bin/process.py
+
 RUN ln -s /opt/marblecutter-tools/bin/* /usr/local/bin/ && mkdir -p /efs

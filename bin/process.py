@@ -18,34 +18,37 @@ callback_url = sys.argv[3]
 
 # Function to send a callback request
 
+status_message_buffer = ''
+inside_status_tag = False
+error_message = ''
 
 def send_callback_request(body):
     response = requests.post(callback_url, json=body)
 
 # Start the subprocess and capture its standard error output
 
-
 def read_stream(stream, callback):
     while True:
         line = stream.readline()
         if line:
             callback(line)
-        else:
+        elif process_instance.poll() is not None:
+            # subprocess has finished
             break
 
 
 # Initialize variables for parsing the subprocess's standard error output
 
 def stdout_callback(line):
-    print(line)
+    print("Stdout:", line)
 
 # Parse the standard error output line by line
 
-
 def stderr_callback(stderr_chunk):
-    status_message_buffer = ''
-    inside_status_tag = False
-    error_message = ''
+    print("Stderr:", stderr_chunk)
+    global status_message_buffer
+    global inside_status_tag
+    global error_message
 
     i = 0
     while i < len(stderr_chunk):
@@ -62,6 +65,7 @@ def stderr_callback(stderr_chunk):
                 print('Found status message:', text, flush=True)
                 status_update_body = json.loads(text)
                 if status_update_body["status"] == "failed":
+                    # with error_message_lock:
                     status_update_body["message"] = error_message
                 send_callback_request(status_update_body)
             status_message_buffer = ''
@@ -93,3 +97,6 @@ stderr_thread.start()
 # Wait for both threads to finish
 stdout_thread.join()
 stderr_thread.join()
+
+if process_instance.returncode != 0:
+    sys.exit(process_instance.returncode)

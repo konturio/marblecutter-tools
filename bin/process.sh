@@ -110,58 +110,6 @@ function cleanup_on_failure() {
   fi
 }
 
-function update_aws_credentials() {
-  set +u
-
-  # attempt to load credentials from an IAM profile if none were provided
-  if [[ -z "$AWS_ACCESS_KEY_ID" || -z "$AWS_SECRET_ACCESS_KEY" || ! -z "$AWS_SESSION_TOKEN" ]]; then
-    set +e
-
-    if [[ -z "$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI" ]]; then
-      local profile=$(curl -sf --connect-timeout 1 "http://169.254.169.254/latest/meta-data/iam/security-credentials/")
-
-      if [[ ! -z "$profile" ]]; then
-        local credentials=$(curl -sf --connect-timeout 1 "http://169.254.169.254/latest/meta-data/iam/security-credentials/${profile}")
-        export AWS_ACCESS_KEY_ID=$(jq -r .AccessKeyId <<< $credentials)
-        export AWS_SECRET_ACCESS_KEY=$(jq -r .SecretAccessKey <<< $credentials)
-        export AWS_SESSION_TOKEN=$(jq -r .Token <<< $credentials)
-      fi
-    else
-      local credentials=$(curl -sf --connect-timeout 1 "http://169.254.170.2${AWS_CONTAINER_CREDENTIALS_RELATIVE_URI}")
-      export AWS_ACCESS_KEY_ID=$(jq -r .AccessKeyId <<< $credentials)
-      export AWS_SECRET_ACCESS_KEY=$(jq -r .SecretAccessKey <<< $credentials)
-      export AWS_SESSION_TOKEN=$(jq -r .Token <<< $credentials)
-    fi
-
-    if [[ -z "$AWS_ACCESS_KEY_ID" ]]; then
-      # don't leave AWS credentials set while invalid
-      unset AWS_ACCESS_KEY_ID
-      unset AWS_SECRET_ACCESS_KEY
-      unset AWS_SESSION_TOKEN
-    fi
-
-    set -e
-  fi
-
-  set -u
-}
-
-function mount_efs() {
-  set +u
-
-  # mount an EFS volume if requested and use that as TMPDIR
-  if [[ ! -z "$EFS_HOST" ]]; then
-    set +e
-    mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${EFS_HOST}:/ /efs
-    set -e
-
-    export CPL_TMPDIR=/efs
-    export TMPDIR=/efs
-  fi
-
-  set -u
-}
-
 function download() {
   local input=$1
   local source=$2
@@ -198,10 +146,6 @@ function download() {
 }
 
 check_args
-
-update_aws_credentials
-
-mount_efs
 
 # register signal handlers
 trap cleanup EXIT
@@ -331,7 +275,6 @@ rio shapes --collection --mask --as-mask --precision 6 ${small} | \
 meta=$(< $footprint)
 
 if [[ "$output" =~ ^s3:// ]]; then
-  update_aws_credentials
 
   echo "Uploading..."
   update_status status "Uploading..."
